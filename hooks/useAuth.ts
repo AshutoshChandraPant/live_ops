@@ -25,18 +25,14 @@ export function useAuth() {
 
     const fetchRole = async (uid: string) => {
       setDebug((d) => `${d} | fetching role for ${uid.slice(0, 8)}`)
-      const { data, error } = await supabase
-        .from('team_members')
-        .select('role')
-        .eq('id', uid)
-        .maybeSingle()
+      const { data, error } = await supabase.rpc('my_role')
       if (!mounted) return
       if (error) {
         setDebug((d) => `${d} | role ERROR: ${error.message}`)
         setRole(null)
       } else {
-        setDebug((d) => `${d} | role: ${data?.role ?? 'NONE'}`)
-        setRole((data?.role as UserRole | undefined) ?? null)
+        setDebug((d) => `${d} | role: ${data ?? 'NONE'}`)
+        setRole((data as UserRole | null) ?? null)
       }
     }
 
