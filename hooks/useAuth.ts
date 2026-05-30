@@ -12,39 +12,56 @@ export function useAuth() {
   const supabase = createClient()
 
   useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      if (user) {
-        const { data } = await supabase
-          .from('team_members')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-        setRole(data?.role ?? null)
+    let mounted = true
+
+    const fetchRole = async (uid: string) => {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('role')
+        .eq('id', uid)
+        .maybeSingle()
+      if (!mounted) return
+      if (error) {
+        console.warn('Could not fetch role:', error.message)
+        setRole(null)
+      } else {
+        setRole((data?.role as UserRole | undefined) ?? null)
       }
-      setLoading(false)
+    }
+
+    const init = async () => {
+      try {
+        const { data } = await supabase.auth.getUser()
+        if (!mounted) return
+        setUser(data.user)
+        if (data.user) {
+          await fetchRole(data.user.id)
+        }
+      } catch (e) {
+        console.error('Auth init error:', e)
+      } finally {
+        if (mounted) setLoading(false)
+      }
     }
 
     init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_, session) => {
+        if (!mounted) return
         setUser(session?.user ?? null)
         if (session?.user) {
-          const { data } = await supabase
-            .from('team_members')
-            .select('role')
-            .eq('id', session.user.id)
-            .single()
-          setRole(data?.role ?? null)
+          await fetchRole(session.user.id)
         } else {
           setRole(null)
         }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [supabase])
 
   const signOut = async () => {
