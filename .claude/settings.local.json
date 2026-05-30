@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo *)",
+      "WebFetch(domain:github.com)",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\nodejs\" -ErrorAction SilentlyContinue; Get-ChildItem \"$env:APPDATA\\\\npm\" -ErrorAction SilentlyContinue; Test-Path \"C:\\\\Program Files\\\\nodejs\\\\node.exe\")",
+      "PowerShell(Get-ChildItem C:\\\\live_ops -Recurse -Exclude node_modules,.next,.claude | Where-Object { !$_.PSIsContainer } | Select-Object -ExpandProperty FullName | Sort-Object)",
+      "Bash(extract-text \"C:\\\\Users\\\\ashut\\\\Downloads\\\\liveops test.xlsx\")",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd C:\\\\live_ops; npm run dev 2>&1)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}
