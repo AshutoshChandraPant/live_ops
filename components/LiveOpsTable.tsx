@@ -258,7 +258,7 @@ export default function LiveOpsTable({
         cell: ({ row }) => (
           <InlineSelect
             value={row.original.ops_in_charge ?? ''}
-            options={opsMembers.map((m) => m.id)}
+            options={opsMembers.map((m) => ({ value: m.id, label: m.name }))}
             onSave={(v) => onUpdate(row.original.id, { ops_in_charge: v || null })}
             disabled={!canEditOps}
             placeholder="Assign…"
@@ -266,7 +266,6 @@ export default function LiveOpsTable({
               'min-w-[100px]',
               !row.original.ops_in_charge && 'text-orange-500'
             )}
-            colorMap={Object.fromEntries(opsMembers.map((m) => [m.id, '']))}
           />
         ),
       },

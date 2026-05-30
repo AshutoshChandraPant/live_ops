@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: string) {
-  return format(parseISO(date), 'dd MMM yyyy')
+  return format(parseISO(date), 'dd-MM-yy')
 }
 
 export function formatTime(time: string) {

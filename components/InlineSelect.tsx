@@ -9,15 +9,20 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
+export type InlineSelectOption = string | { value: string; label: string }
+
 interface InlineSelectProps {
   value: string
-  options: string[]
+  options: InlineSelectOption[]
   onSave: (value: string) => void
   disabled?: boolean
   placeholder?: string
   className?: string
   colorMap?: Record<string, string>
 }
+
+const normalize = (o: InlineSelectOption) =>
+  typeof o === 'string' ? { value: o, label: o } : o
 
 export default function InlineSelect({
   value,
@@ -28,11 +33,14 @@ export default function InlineSelect({
   className,
   colorMap,
 }: InlineSelectProps) {
+  const normalized = options.map(normalize)
+  const label = normalized.find((o) => o.value === value)?.label ?? value
+
   if (disabled) {
     const color = colorMap?.[value] ?? ''
     return (
       <span className={cn('text-sm text-muted-foreground', color, className)}>
-        {value || placeholder}
+        {label || placeholder}
       </span>
     )
   }
@@ -48,12 +56,12 @@ export default function InlineSelect({
           className
         )}
       >
-        <SelectValue placeholder={placeholder} />
+        <SelectValue placeholder={placeholder}>{label || placeholder}</SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {options.map((opt) => (
-          <SelectItem key={opt} value={opt}>
-            {opt}
+        {normalized.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value}>
+            {opt.label}
           </SelectItem>
         ))}
       </SelectContent>

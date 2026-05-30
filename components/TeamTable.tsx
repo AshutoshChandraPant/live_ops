@@ -95,7 +95,11 @@ export default function TeamTable({
         cell: ({ row }) => (
           <InlineSelect
             value={row.original.role}
-            options={['pm', 'ops', 'leadership']}
+            options={[
+              { value: 'pm', label: 'Program Manager' },
+              { value: 'ops', label: 'Operations' },
+              { value: 'leadership', label: 'Leadership' },
+            ]}
             onSave={(v) => onUpdate(row.original.id, { role: v as UserRole })}
             disabled={!canEdit}
           />
