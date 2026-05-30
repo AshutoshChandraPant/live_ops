@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { redirect } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import MetricsBar from '@/components/MetricsBar'
 import SessionPlanningTable from '@/components/SessionPlanningTable'
@@ -16,14 +16,45 @@ import SessionTypesManager from '@/components/SessionTypesManager'
 type PlanningView = 'table' | 'calendar'
 
 export default function PlanningPage() {
+  const router = useRouter()
   const { role, loading: authLoading } = useAuth()
   const { sessions, loading, addSession, updateSession, deleteSession } = useSessions()
   const { sessionTypes, addType, toggleType } = useSessionTypes()
   const [view, setView] = useState<PlanningView>('table')
   const [showTypes, setShowTypes] = useState(false)
 
-  if (authLoading) return null
-  if (role !== 'pm') redirect('/live-ops')
+  useEffect(() => {
+    if (!authLoading && role && role !== 'pm') {
+      router.replace('/live-ops')
+    }
+  }, [authLoading, role, router])
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-muted-foreground text-sm">
+        Loading…
+      </div>
+    )
+  }
+
+  if (!role) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-2 text-sm">
+        <p className="text-foreground font-medium">Account not provisioned</p>
+        <p className="text-muted-foreground">
+          Your user has not been added to the team yet. Contact the admin.
+        </p>
+      </div>
+    )
+  }
+
+  if (role !== 'pm') {
+    return (
+      <div className="flex items-center justify-center h-screen text-muted-foreground text-sm">
+        Redirecting…
+      </div>
+    )
+  }
 
   const canEdit = role === 'pm'
 
