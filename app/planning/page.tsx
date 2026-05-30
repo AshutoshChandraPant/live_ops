@@ -42,10 +42,13 @@ export default function PlanningPage() {
 
   if (!role) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-2 text-sm">
+      <div className="flex flex-col items-center justify-center h-screen gap-2 text-sm p-4">
         <p className="text-foreground font-medium">Account not provisioned</p>
         <p className="text-muted-foreground">
           Your user has not been added to the team yet. Contact the admin.
+        </p>
+        <p className="text-xs font-mono text-gray-400 max-w-2xl text-center break-all mt-4">
+          Debug: {debug}
         </p>
       </div>
     )
