@@ -9,22 +9,12 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [role, setRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
-  const [debug, setDebug] = useState<string>('initialising')
   const supabase = createClient()
 
   useEffect(() => {
     let mounted = true
 
-    // Safety timeout — never get stuck on loading
-    const timeout = setTimeout(() => {
-      if (mounted) {
-        setDebug((d) => `${d} | TIMEOUT after 5s`)
-        setLoading(false)
-      }
-    }, 5000)
-
     const fetchRole = async (uid: string) => {
-      setDebug((d) => `${d} | fetching role for ${uid.slice(0, 8)}`)
       const { data, error } = await supabase
         .from('team_members')
         .select('role')
@@ -32,32 +22,25 @@ export function useAuth() {
         .maybeSingle()
       if (!mounted) return
       if (error) {
-        setDebug((d) => `${d} | role ERROR: ${error.message}`)
+        console.warn('Could not fetch role:', error.message)
         setRole(null)
       } else {
-        setDebug((d) => `${d} | role: ${data?.role ?? 'NONE'}`)
         setRole((data?.role as UserRole | undefined) ?? null)
       }
     }
 
     const init = async () => {
       try {
-        setDebug('calling getUser')
-        const { data, error } = await supabase.auth.getUser()
+        const { data } = await supabase.auth.getUser()
         if (!mounted) return
-        if (error) {
-          setDebug((d) => `${d} | getUser ERROR: ${error.message}`)
-        }
         setUser(data.user)
-        setDebug((d) => `${d} | user: ${data.user?.email ?? 'NONE'}`)
         if (data.user) {
           await fetchRole(data.user.id)
         }
-      } catch (e: any) {
-        setDebug((d) => `${d} | EXCEPTION: ${e?.message ?? String(e)}`)
+      } catch (e) {
+        console.error('Auth init error:', e)
       } finally {
         if (mounted) setLoading(false)
-        clearTimeout(timeout)
       }
     }
 
@@ -77,7 +60,6 @@ export function useAuth() {
 
     return () => {
       mounted = false
-      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [supabase])
@@ -86,5 +68,5 @@ export function useAuth() {
     await supabase.auth.signOut()
   }
 
-  return { user, role, loading, signOut, debug }
+  return { user, role, loading, signOut }
 }

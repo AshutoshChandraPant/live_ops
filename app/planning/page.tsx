@@ -17,7 +17,7 @@ type PlanningView = 'table' | 'calendar'
 
 export default function PlanningPage() {
   const router = useRouter()
-  const { role, loading: authLoading, debug } = useAuth()
+  const { role, loading: authLoading } = useAuth()
   const { sessions, loading, addSession, updateSession, deleteSession } = useSessions()
   const { sessionTypes, addType, toggleType } = useSessionTypes()
   const [view, setView] = useState<PlanningView>('table')
@@ -31,11 +31,8 @@ export default function PlanningPage() {
 
   if (authLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-2 text-sm">
-        <p className="text-muted-foreground">Loading…</p>
-        <p className="text-xs font-mono text-gray-400 max-w-xl text-center break-words">
-          {debug}
-        </p>
+      <div className="flex items-center justify-center h-screen text-muted-foreground text-sm">
+        Loading…
       </div>
     )
   }
