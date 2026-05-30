@@ -1,41 +1,68 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { redirect } from 'next/navigation'
 import Nav from '@/components/Nav'
 import MetricsBar from '@/components/MetricsBar'
 import SessionPlanningTable from '@/components/SessionPlanningTable'
 import CalendarView from '@/components/CalendarView'
+import WeekSelector from '@/components/WeekSelector'
 import { useSessions } from '@/hooks/useSessions'
 import { useSessionTypes } from '@/hooks/useSessionTypes'
 import { useAuth } from '@/hooks/useAuth'
+import { useWeekState } from '@/hooks/useWeekState'
 import { Button } from '@/components/ui/button'
 import { TableIcon, CalendarDays, Settings2 } from 'lucide-react'
 import SessionTypesManager from '@/components/SessionTypesManager'
+import { isInWeek, getAvailableWeeks, addWeeks } from '@/lib/week'
 
 type PlanningView = 'table' | 'calendar'
 
 export default function PlanningPage() {
   const { role, loading: authLoading } = useAuth()
-  const { sessions, loading, addSession, updateSession, deleteSession } = useSessions()
+  const { sessions, loading, addSession, updateSession, deleteSession, duplicateWeek } = useSessions()
   const { sessionTypes, addType, toggleType } = useSessionTypes()
+  const { weekStart, setWeekStart } = useWeekState()
   const [view, setView] = useState<PlanningView>('table')
   const [showTypes, setShowTypes] = useState(false)
 
+  const weekSessions = useMemo(
+    () => sessions.filter((s) => isInWeek(s.date, weekStart)),
+    [sessions, weekStart]
+  )
+
+  const availableWeeks = useMemo(
+    () => getAvailableWeeks(sessions.map((s) => s.date)),
+    [sessions]
+  )
+
   if (authLoading) return null
-  if (role !== 'pm') redirect('/live-ops')
+  if (role && role !== 'pm') redirect('/live-ops')
 
   const canEdit = role === 'pm'
+
+  const handleCreateWeek = async () => {
+    await duplicateWeek(weekStart)
+    setWeekStart(addWeeks(weekStart, 1))
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <Nav sessions={sessions} />
-      <MetricsBar sessions={sessions} />
+      <MetricsBar sessions={weekSessions} />
+
+      <WeekSelector
+        weekStart={weekStart}
+        onChange={setWeekStart}
+        availableWeeks={availableWeeks}
+        onCreateWeek={canEdit ? handleCreateWeek : undefined}
+        canCreate={canEdit}
+      />
 
       <div className="flex items-center gap-2 px-4 py-2 border-b bg-background">
         <h1 className="text-sm font-semibold">Session Planning</h1>
         <span className="text-xs text-muted-foreground">
-          ({sessions.length} sessions)
+          ({weekSessions.length} sessions this week)
         </span>
         <div className="ml-auto flex items-center gap-1">
           <Button
@@ -83,7 +110,7 @@ export default function PlanningPage() {
           </div>
         ) : view === 'table' ? (
           <SessionPlanningTable
-            sessions={sessions}
+            sessions={weekSessions}
             sessionTypes={sessionTypes}
             onAdd={addSession}
             onUpdate={updateSession}
@@ -91,7 +118,7 @@ export default function PlanningPage() {
             canEdit={canEdit}
           />
         ) : (
-          <CalendarView sessions={sessions} />
+          <CalendarView sessions={weekSessions} />
         )}
       </main>
     </div>

@@ -1,15 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Nav from '@/components/Nav'
 import MetricsBar from '@/components/MetricsBar'
 import LiveOpsTable from '@/components/LiveOpsTable'
 import CalendarView from '@/components/CalendarView'
+import WeekSelector from '@/components/WeekSelector'
 import { useSessions } from '@/hooks/useSessions'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
 import { useAuth } from '@/hooks/useAuth'
+import { useWeekState } from '@/hooks/useWeekState'
 import { Button } from '@/components/ui/button'
 import { TableIcon, CalendarDays } from 'lucide-react'
+import { isInWeek, getAvailableWeeks } from '@/lib/week'
 
 type LiveView = 'table' | 'calendar'
 
@@ -17,7 +20,18 @@ export default function LiveOpsPage() {
   const { role, loading: authLoading } = useAuth()
   const { sessions, loading, updateSession, addOpsM, removeOpsM } = useSessions(true)
   const { members } = useTeamMembers()
+  const { weekStart, setWeekStart } = useWeekState()
   const [view, setView] = useState<LiveView>('table')
+
+  const weekSessions = useMemo(
+    () => sessions.filter((s) => isInWeek(s.date, weekStart)),
+    [sessions, weekStart]
+  )
+
+  const availableWeeks = useMemo(
+    () => getAvailableWeeks(sessions.map((s) => s.date)),
+    [sessions]
+  )
 
   if (authLoading) return null
 
@@ -26,12 +40,18 @@ export default function LiveOpsPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <Nav sessions={sessions} />
-      <MetricsBar sessions={sessions} />
+      <MetricsBar sessions={weekSessions} />
+
+      <WeekSelector
+        weekStart={weekStart}
+        onChange={setWeekStart}
+        availableWeeks={availableWeeks}
+      />
 
       <div className="flex items-center gap-2 px-4 py-2 border-b bg-background">
         <h1 className="text-sm font-semibold">Live Ops</h1>
         <span className="text-xs text-muted-foreground">
-          ({sessions.length} sessions)
+          ({weekSessions.length} sessions this week)
         </span>
         <div className="ml-auto flex items-center gap-1">
           <Button
@@ -60,7 +80,7 @@ export default function LiveOpsPage() {
           </div>
         ) : view === 'table' ? (
           <LiveOpsTable
-            sessions={sessions}
+            sessions={weekSessions}
             members={members}
             onUpdate={updateSession}
             onAddOpsM={addOpsM}
@@ -68,7 +88,7 @@ export default function LiveOpsPage() {
             canEditOps={canEditOps}
           />
         ) : (
-          <CalendarView sessions={sessions} />
+          <CalendarView sessions={weekSessions} />
         )}
       </main>
     </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Session, SessionInsert, SessionUpdate } from '@/lib/types'
+import { addDaysToISO, getMondayOf, getSundayOf, isInWeek } from '@/lib/week'
 
 export function useSessions(onlyConfirmed = false) {
   const [sessions, setSessions] = useState<Session[]>([])
@@ -155,6 +156,48 @@ export function useSessions(onlyConfirmed = false) {
     [fetchSessions, supabase]
   )
 
+  /**
+   * Duplicate every session in `sourceWeekStart` into the following week.
+   * - Date shifted by 7 days
+   * - All confirmation checkboxes reset
+   * - All status fields reset to defaults
+   * - Instructor, link, type, time, notes preserved
+   * - Ops assignments (ops_in_charge + additional members) reset to null
+   */
+  const duplicateWeek = useCallback(
+    async (sourceWeekStart: Date) => {
+      const monday = getMondayOf(sourceWeekStart)
+      const sourceSessions = sessions.filter((s) => isInWeek(s.date, monday))
+      if (sourceSessions.length === 0) {
+        throw new Error('No sessions in the selected week to duplicate.')
+      }
+      const { data: { user } } = await supabase.auth.getUser()
+      const newRows = sourceSessions.map((s) => ({
+        program: s.program,
+        cohort: s.cohort,
+        session_type: s.session_type,
+        date: addDaysToISO(s.date, 7),
+        start_time: s.start_time,
+        end_time: s.end_time,
+        instructor: s.instructor,
+        meeting_link: s.meeting_link,
+        notes: s.notes,
+        soft_confirmed: false,
+        final_confirmed: false,
+        cancelled: false,
+        ops_in_charge: null,
+        published: 'No' as const,
+        deck_status: 'Not Started' as const,
+        instructor_connect: 'Pending' as const,
+        created_by: user?.id ?? null,
+      }))
+      const { error } = await supabase.from('sessions').insert(newRows)
+      if (error) throw new Error(error.message)
+      await fetchSessions()
+    },
+    [sessions, fetchSessions, supabase]
+  )
+
   return {
     sessions,
     loading,
@@ -164,6 +207,7 @@ export function useSessions(onlyConfirmed = false) {
     deleteSession,
     addOpsM,
     removeOpsM,
+    duplicateWeek,
     refetch: fetchSessions,
   }
 }
