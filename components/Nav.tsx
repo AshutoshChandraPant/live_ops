@@ -26,7 +26,7 @@ export default function Nav({ sessions = [] }: NavProps) {
   const visibleLinks = links.filter((l) => !role || l.roles.includes(role))
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background">
+    <header className="sticky top-0 z-[60] border-b bg-background">
       <div className="flex h-12 items-center px-4 gap-6">
         <div className="flex items-center gap-2 font-semibold text-sm">
           <Zap className="h-4 w-4 text-primary" />

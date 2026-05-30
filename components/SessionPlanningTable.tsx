@@ -17,7 +17,9 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import InlineCell from '@/components/InlineCell'
 import InlineSelect from '@/components/InlineSelect'
+import InlineComboBox from '@/components/InlineComboBox'
 import TableToolbar, { type GroupOption, type ColumnFilter } from '@/components/TableToolbar'
+import { tagClass } from '@/lib/colors'
 import { cn, formatDate, formatTimeRange, getSessionStatus, getDayOfWeek } from '@/lib/utils'
 import type { Session, SessionInsert, SessionUpdate, SessionType } from '@/lib/types'
 
@@ -63,7 +65,7 @@ export default function SessionPlanningTable({
   const [addingRow, setAddingRow] = useState(false)
   const [newRow, setNewRow] = useState<SessionInsert>(EMPTY_ROW)
   const [saving, setSaving] = useState(false)
-  const [groupBy, setGroupBy] = useState<string | null>('date')
+  const [groupBy, setGroupBy] = useState<string | null>('program')
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
@@ -102,6 +104,14 @@ export default function SessionPlanningTable({
   }, [sessions, columnFilters])
 
   const typeOptions = sessionTypes.map((t) => t.name)
+  const programOptions = useMemo(
+    () => Array.from(new Set(sessions.map((s) => s.program).filter(Boolean))).sort(),
+    [sessions]
+  )
+  const cohortOptions = useMemo(
+    () => Array.from(new Set(sessions.map((s) => s.cohort).filter(Boolean))).sort(),
+    [sessions]
+  )
 
   const handleAdd = async () => {
     if (!newRow.program || !newRow.date || !newRow.start_time || !newRow.end_time) return
@@ -131,11 +141,13 @@ export default function SessionPlanningTable({
           </button>
         ),
         cell: ({ row }) => (
-          <InlineCell
+          <InlineComboBox
             value={row.original.program}
+            options={programOptions}
             onSave={(v) => update(row.original.id, { program: v })}
             disabled={!canEdit}
             placeholder="Program"
+            colored
           />
         ),
       },
@@ -144,11 +156,13 @@ export default function SessionPlanningTable({
         accessorKey: 'cohort',
         header: () => <span className="text-xs font-medium text-muted-foreground">Cohort</span>,
         cell: ({ row }) => (
-          <InlineCell
+          <InlineComboBox
             value={row.original.cohort}
+            options={cohortOptions}
             onSave={(v) => update(row.original.id, { cohort: v })}
             disabled={!canEdit}
             placeholder="Cohort"
+            colored
           />
         ),
       },
@@ -324,7 +338,7 @@ export default function SessionPlanningTable({
           ) : null,
       },
     ],
-    [canEdit, typeOptions, update, onDelete]
+    [canEdit, typeOptions, programOptions, cohortOptions, update, onDelete]
   )
 
   const table = useReactTable({

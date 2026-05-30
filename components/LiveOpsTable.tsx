@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import InlineSelect from '@/components/InlineSelect'
 import TableToolbar, { type GroupOption, type ColumnFilter } from '@/components/TableToolbar'
+import { tagClass } from '@/lib/colors'
 import { cn, formatDate, formatTimeRange, getDayOfWeek, getSessionStatus } from '@/lib/utils'
 import type {
   Session,
@@ -136,7 +137,7 @@ export default function LiveOpsTable({
 }: Props) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
-  const [groupBy, setGroupBy] = useState<string | null>('date')
+  const [groupBy, setGroupBy] = useState<string | null>('day')
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({})
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
@@ -223,9 +224,13 @@ export default function LiveOpsTable({
           </button>
         ),
         cell: ({ row }) => (
-          <div>
-            <span className="text-sm font-medium">{row.original.program}</span>
-            <span className="text-xs text-muted-foreground ml-1">{row.original.cohort}</span>
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className={cn('rounded px-1.5 py-0.5 text-xs font-medium', tagClass(row.original.program))}>
+              {row.original.program}
+            </span>
+            <span className={cn('rounded px-1.5 py-0.5 text-xs font-medium', tagClass(row.original.cohort))}>
+              {row.original.cohort}
+            </span>
           </div>
         ),
       },
